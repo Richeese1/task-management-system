@@ -52,9 +52,29 @@ const mockTasks = [
   }
 ];
 
+// Store recently deleted tasks
+const recentlyDeleted = [];
+
 export const mockApi = {
   // Get all tasks
   getTasks: () => {
+    // Check for tasks to restore (deleted more than 7 days ago)
+    const now = new Date();
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    
+    // Auto-restore tasks deleted more than 7 days ago
+    const toRestore = recentlyDeleted.filter(item => 
+      new Date(item.deletedAt) < sevenDaysAgo
+    );
+    
+    toRestore.forEach(item => {
+      mockTasks.push(item.task);
+      const index = recentlyDeleted.findIndex(d => d.task._id === item.task._id);
+      if (index > -1) {
+        recentlyDeleted.splice(index, 1);
+      }
+    });
+    
     return Promise.resolve({ data: mockTasks });
   },
 
@@ -63,19 +83,52 @@ export const mockApi = {
     const newTask = {
       _id: Date.now().toString(),
       ...taskData,
+      status: 'pending',
       createdAt: new Date().toISOString()
     };
     mockTasks.push(newTask);
     return Promise.resolve({ data: newTask });
   },
 
-  // Delete task
+  // Update task (for marking as complete)
+  updateTask: (taskId, taskData) => {
+    const index = mockTasks.findIndex(task => task._id === taskId);
+    if (index > -1) {
+      mockTasks[index] = { ...mockTasks[index], ...taskData };
+      return Promise.resolve({ data: mockTasks[index] });
+    }
+    return Promise.resolve({ data: null });
+  },
+
+  // Delete task (move to recently deleted)
   deleteTask: (taskId) => {
     const index = mockTasks.findIndex(task => task._id === taskId);
     if (index > -1) {
-      mockTasks.splice(index, 1);
+      const deletedTask = mockTasks.splice(index, 1)[0];
+      // Add to recently deleted with timestamp
+      recentlyDeleted.push({
+        task: deletedTask,
+        deletedAt: new Date().toISOString()
+      });
+      return Promise.resolve({ data: { success: true, task: deletedTask } });
     }
-    return Promise.resolve({ data: {} });
+    return Promise.resolve({ data: { success: false } });
+  },
+
+  // Get recently deleted tasks
+  getRecentlyDeleted: () => {
+    return Promise.resolve({ data: recentlyDeleted });
+  },
+
+  // Restore deleted task
+  restoreTask: (taskId) => {
+    const index = recentlyDeleted.findIndex(item => item.task._id === taskId);
+    if (index > -1) {
+      const restoredTask = recentlyDeleted.splice(index, 1)[0].task;
+      mockTasks.push(restoredTask);
+      return Promise.resolve({ data: restoredTask });
+    }
+    return Promise.resolve({ data: null });
   }
 };
 

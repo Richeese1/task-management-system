@@ -60,10 +60,18 @@ export const tasksAPI = {
   create: USE_MOCK_API 
     ? (taskData) => mockApi.createTask(taskData)
     : (taskData) => api.post('/tasks', taskData),
-  update: (id, taskData) => api.put(`/tasks/${id}`, taskData),
+  update: USE_MOCK_API 
+    ? (id, taskData) => mockApi.updateTask(id, taskData)
+    : (id, taskData) => api.put(`/tasks/${id}`, taskData),
   delete: USE_MOCK_API 
     ? (id) => mockApi.deleteTask(id)
     : (id) => api.delete(`/tasks/${id}`),
+  getRecentlyDeleted: USE_MOCK_API 
+    ? () => mockApi.getRecentlyDeleted()
+    : () => api.get('/tasks/recently-deleted'),
+  restore: USE_MOCK_API 
+    ? (id) => mockApi.restoreTask(id)
+    : (id) => api.post(`/tasks/${id}/restore`),
 };
 
 export default api;
