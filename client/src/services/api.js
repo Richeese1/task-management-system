@@ -1,6 +1,10 @@
 import axios from 'axios';
+import { mockApi, mockAuth } from './mockApi';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+// Use mock API for Vercel deployment, real API for development
+const USE_MOCK_API = process.env.NODE_ENV === 'production' || !process.env.REACT_APP_API_URL;
+
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -40,16 +44,26 @@ api.interceptors.response.use(
 
 // Auth API calls
 export const authAPI = {
-  login: (credentials) => api.post('/auth/login', credentials),
-  register: (userData) => api.post('/auth/register', userData),
+  login: USE_MOCK_API 
+    ? (credentials) => mockAuth.login(credentials.email, credentials.password)
+    : (credentials) => api.post('/auth/login', credentials),
+  register: USE_MOCK_API 
+    ? (userData) => mockAuth.register(userData.username, userData.email, userData.password)
+    : (userData) => api.post('/auth/register', userData),
 };
 
 // Tasks API calls
 export const tasksAPI = {
-  getAll: () => api.get('/tasks'),
-  create: (taskData) => api.post('/tasks', taskData),
+  getAll: USE_MOCK_API 
+    ? () => mockApi.getTasks()
+    : () => api.get('/tasks'),
+  create: USE_MOCK_API 
+    ? (taskData) => mockApi.createTask(taskData)
+    : (taskData) => api.post('/tasks', taskData),
   update: (id, taskData) => api.put(`/tasks/${id}`, taskData),
-  delete: (id) => api.delete(`/tasks/${id}`),
+  delete: USE_MOCK_API 
+    ? (id) => mockApi.deleteTask(id)
+    : (id) => api.delete(`/tasks/${id}`),
 };
 
 export default api;
