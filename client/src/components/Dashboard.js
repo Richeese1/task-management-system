@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { tasksAPI } from '../services/api';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
@@ -38,12 +38,7 @@ const Dashboard = () => {
 
   const fetchTasks = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/tasks', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await tasksAPI.getAll();
       setTasks(response.data);
     } catch (err) {
       setError('Failed to fetch tasks');
@@ -56,12 +51,7 @@ const Dashboard = () => {
   const handleAddTask = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('http://localhost:5000/api/tasks', newTask, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await tasksAPI.create(newTask);
       
       setNewTask({
         title: '',
@@ -80,12 +70,7 @@ const Dashboard = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/tasks/${taskId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await tasksAPI.delete(taskId);
       fetchTasks();
     } catch (err) {
       setError('Failed to delete task');
