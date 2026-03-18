@@ -58,17 +58,16 @@ const recentlyDeleted = [];
 export const mockApi = {
   // Get all tasks
   getTasks: () => {
-    // Check for tasks to restore (deleted more than 7 days ago)
+    // Check for tasks to permanently delete (deleted more than 7 days ago)
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    // Auto-restore tasks deleted more than 7 days ago
-    const toRestore = recentlyDeleted.filter(item => 
+    // Permanently remove tasks deleted more than 7 days ago
+    const toDeletePermanently = recentlyDeleted.filter(item => 
       new Date(item.deletedAt) < sevenDaysAgo
     );
     
-    toRestore.forEach(item => {
-      mockTasks.push(item.task);
+    toDeletePermanently.forEach(item => {
       const index = recentlyDeleted.findIndex(d => d.task._id === item.task._id);
       if (index > -1) {
         recentlyDeleted.splice(index, 1);

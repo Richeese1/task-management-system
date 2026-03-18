@@ -134,14 +134,23 @@ const Dashboard = () => {
     if (diffDays === 0) return 'Deleted today';
     if (diffDays === 1) return 'Deleted yesterday';
     if (diffDays < 7) return `Deleted ${diffDays} days ago`;
-    return `Deleted ${diffDays} days ago (will auto-restore soon)`;
+    return `Deleted ${diffDays} days ago (will be permanently deleted)`;
   };
 
   const handleToggleComplete = async (taskId) => {
     try {
       // Find the task and determine new status
       const task = tasks.find(t => t._id === taskId);
-      const newStatus = task.status === 'completed' ? 'pending' : 'completed';
+      let newStatus;
+      
+      // Cycle through statuses: pending -> in-progress -> completed -> pending
+      if (task.status === 'pending') {
+        newStatus = 'in-progress';
+      } else if (task.status === 'in-progress') {
+        newStatus = 'completed';
+      } else {
+        newStatus = 'pending';
+      }
       
       // Update local state immediately for instant feedback
       setTasks(prevTasks => 
@@ -226,6 +235,24 @@ const Dashboard = () => {
       case 'in-progress': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'pending': return 'bg-gray-100 text-gray-800 border-gray-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'completed': return '✅';
+      case 'in-progress': return '🔄';
+      case 'pending': return '⭕';
+      default: return '⭕';
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'completed': return 'Click to restart';
+      case 'in-progress': return 'Click to complete';
+      case 'pending': return 'Click to start';
+      default: return 'Click to start';
     }
   };
 
@@ -391,7 +418,7 @@ const Dashboard = () => {
                 )}
               </button>
               <p className="text-xs text-gray-500 mt-2">
-                Tasks auto-restore after 7 days
+                Tasks permanently deleted after 7 days
               </p>
             </div>
           </aside>
@@ -478,14 +505,18 @@ const Dashboard = () => {
                           className={`p-1 rounded transition-colors ${
                             task.status === 'completed' 
                               ? 'text-green-600 hover:bg-green-50' 
+                              : task.status === 'in-progress'
+                              ? 'text-blue-600 hover:bg-blue-50'
                               : 'text-gray-400 hover:bg-gray-50'
                           }`}
+                          title={getStatusText(task.status)}
                         >
-                          {task.status === 'completed' ? '✅' : '⭕'}
+                          {getStatusIcon(task.status)}
                         </button>
                         <button
                           onClick={() => handleDeleteTask(task._id)}
                           className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                          title="Delete task"
                         >
                           🗑️
                         </button>
@@ -754,8 +785,8 @@ const Dashboard = () => {
             
             <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
               <p className="text-sm text-blue-800">
-                <strong>💡 Tip:</strong> Deleted tasks are automatically restored after 7 days. 
-                You can manually restore them anytime by clicking the "Restore" button.
+                <strong>💡 Tip:</strong> Deleted tasks are permanently removed after 7 days. 
+                You can manually restore them anytime by clicking the "Restore" button before they're permanently deleted.
               </p>
             </div>
 
